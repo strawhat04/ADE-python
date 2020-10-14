@@ -82,9 +82,9 @@ def LinFlux(struct_mesh):
 	G0=1
 	irho=1
 
-	u=flow_u*np.ones((xGRID_nos,yGRID_nos,zGrid_nos))
-	v=flow_v*np.ones((xGRID_nos,yGRID_nos,zGrid_nos))
-	w=flow_w*np.ones((xGRID_nos,yGRID_nos,zGrid_nos))
+	u=flow_u*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
+	v=flow_v*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
+	w=flow_w*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
 	gamma=G0*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
 	rho=irho*np.ones((CV_xGRID_nos, CV_yGRID_nos,CV_zGRID_nos))
 
@@ -96,9 +96,9 @@ def LinFlux(struct_mesh):
 
 	matA=np.zeros((xGRID_nos,yGRID_nos))
 
-	for i in range(1,xGRID_nos-1):
-		for j in range(1,yGRID_nos-1):
-			for k in range(1,zGrid_nos-1):	
+	for i in range(0,xGRID_nos):
+		for j in range(0,yGRID_nos):
+			for k in range(0,zGrid_nos):	
 				aw[i,j,k]=D(gamma[i,j,k], dxg(i),dy(j)*dz(k))*funA(F(rho[i,j,k],u[i,j,k], dy(j)*dz(k)),D(gamma[i,j,k], dxg(i), dy(j)*dz(k))) + max(F(rho[i,j,k],u[i,j,k], dy(j)*dz(k)),0)
 				
 				ae[i,j,k]=D(gamma[i+1,j,k], dxg(i+1),dy(j)*dz(k))*funA(F(rho[i+1,j,k],u[i+1,j,k],dy(j)*dz(k)),D(gamma[i+1,j,k], dxg(i+1), dy(j)*dz(k) )) + max(-F(rho[i+1,j,k],u[i+1,j,k],dy(j)*dz(k)),0)	
@@ -107,18 +107,17 @@ def LinFlux(struct_mesh):
 
 				au[i,j]=D(gamma[i,j+1,k], dyg(j+1), dx(i)*dz(k))*funA(F(rho[i,j+1,k],v[i,j+1,k],dx(i)*dz(k)),D(gamma[i,j+1,k], dyg(j+1), dx(i)*dz(k))) + max(-F(rho[i,j+1,k],v[i,j+1,k],dx(i)*dz(k)),0)	
 				
-				ab[i,j,k]=D(gamma[i,j,k], dzg(k),dx(i)*dy(j))*funA(F(rho[i,j,k],u[i,j,k], dx(i)*dy(j)),D(gamma[i,j,k], dzg(k), dx(i)*dy(j))) + max(F(rho[i,j,k],u[i,j,k], dx(i)*dy(j)),0)
+				ab[i,j,k]=D(gamma[i,j,k], dzg(k),dx(i)*dy(j))*funA(F(rho[i,j,k],w[i,j,k], dx(i)*dy(j)),D(gamma[i,j,k], dzg(k), dx(i)*dy(j))) + max(F(rho[i,j,k],w[i,j,k], dx(i)*dy(j)),0)
 
-				af[i,j,k]=D(gamma[i,j,k+1], dzg(k+1),dx(i)*dy(j))*funA(F(rho[i,j,k+1],u[i,j,k+1],dx(i)*dy(j)),D(gamma[i,j,k+1], dzg(i+1), dx(i)*dy(j))) + max(-F(rho[i,j,k+1],u[i,j,k+1],dx(i)*dy(j)),0)	
-
+				af[i,j,k]=D(gamma[i,j,k+1], dzg(k+1),dx(i)*dy(j))*funA(F(rho[i,j,k+1],w[i,j,k+1],dx(i)*dy(j)),D(gamma[i,j,k+1], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[i,j,k+1],w[i,j,k+1],dx(i)*dy(j)),0)	
 
 				c[i,j,k]= sp*dx(i)*dy(j)
 				ap0[i,j,k]=rho[i,j,k]*dx(i)*dy(j)/dt	
 				b[i,j,k]=sc*dx(i)*dy(j) # +ap0[i]*phi[t-1,i]
 
+
 	ap=aw+ae+ad+au+ab+af+ap0-c
 
-
-	print(ad.T)
-	print(au.T)
+	return ap,aw,ae,ad,au,ab,af,ap0,b,c,rho,u,v,w
+	
 
