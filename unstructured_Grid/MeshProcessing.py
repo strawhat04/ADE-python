@@ -2,12 +2,12 @@ import numpy
 
 class MeshTopoogy:
 
-	def __init__(self, mesh, cellFace):
+	def __init__(self, mesh, cellFaceID):
 		print("in class")
 		self.MeshElements=mesh.cells[1].data
 		self.Boundarypoints=mesh.cells[0].data
 		self.MeshPointsCoordinates=mesh.points[:,0:2]
-		self.cellFace=cellFace
+		self.cellFaceID=cellFaceID
 
 		self.BoundaryFace = []
 		self.neighCellID=[]
@@ -38,13 +38,13 @@ class MeshTopoogy:
 					if k==self.TotalMeshElement-1:
 						self.buff.append(None)
 
-				for l in range(len(self.cellFace)):
-					if (self.MeshElements[i,j] in self.cellFace[l,:]) and (self.MeshElements[i,j-1]  in self.cellFace[l,:]):
+				for l in range(len(self.cellFaceID)):
+					if (self.MeshElements[i,j] in self.cellFaceID[l,:]) and (self.MeshElements[i,j-1]  in self.cellFaceID[l,:]):
 						self.buff2.append(l)
 						break
 
 				for m in range(len(self.Boundarypoints)):
-					if (self.MeshElements[i,j] in self.cellFace[m,:]) and (self.MeshElements[i,j-1]  in self.cellFace[m,:]):
+					if (self.MeshElements[i,j] in self.cellFaceID[m,:]) and (self.MeshElements[i,j-1]  in self.cellFaceID[m,:]):
 						if m not in self.BoundaryFace:
 							self.BoundaryFace.append(m)
 
