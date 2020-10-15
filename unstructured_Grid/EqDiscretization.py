@@ -1,21 +1,36 @@
 import numpy
 import math
 
-def tr(a):
-	return np.transpose(a)
 
 #advection flux coeff
+def F(rho, v, MeshPoints,facepoints,centroid):
+	return -rho*(v @ fnormal(MeshPoints,facepoints,centroid))
 
-
-def F(rho, u,dcv):
-	return rho*u*dcv
-#diffusion flux coeff
-def gDiff(MeshPoints,facepoints, centroid):
+def fnormal(MeshPoints, facepoints, centroid):
 	[x1,y1]=MeshPoints[facepoints[0]]
 	[x2,y2]=MeshPoints[facepoints[1]]
-	[xg1 ,yg2]=centroid[0]
-	[xg1 , yg2]=centroid[1]
-	return math.hypot(x1-x2,y1-y2)/math.hypot(x1-x2,y1-y2)
+
+	[xg1 ,yg1]=centroid[0]
+	[xg2 , yg2]=centroid[1]
+
+	if numpy.array([-(y2-y1),x2-x1]) @ numpy.array([xg2-xg1,yg2-yg1]) >0:
+		return numpy.array([-(y2-y1),x2-x1])
+	else:
+		return numpy.array([(y2-y1),-(x2-x1)])
+
+def fArea(MeshPoints,facepoints):
+	[x1,y1]=MeshPoints[facepoints[0]]
+	[x2,y2]=MeshPoints[facepoints[1]]
+
+	return math.hypot(x1-x2,y1-y2) 
+
+#diffusion flux coeff
+def gDiff(MeshPoints,facepoints, centroid):
+	
+	[xg1 ,yg1]=centroid[0]
+	[xg2 , yg2]=centroid[1]
+	return fArea(MeshPoints,facepoints)/math.hypot(xg1-xg2,yg1-yg2)
+
 #Power law advection scheme
 def funA(F,D):
 	if D==0:
@@ -26,7 +41,7 @@ def funA(F,D):
 class linMatrix:
 
 	@staticmethod
-	def get_linMatrix(pymesh, custom_mesh, cellface):
+	def get_linMatrix(pymesh, custom_mesh, cellFaceID):
 
 		MeshCells=pymesh.cells[1].data
 		MeshPoints=pymesh.points[:,0:2]
@@ -37,23 +52,26 @@ class linMatrix:
 		totalMeshCells=len(MeshCells)
 		fluxMat=numpy.zeros((totalMeshCells, totalMeshCells))
 		bMat=numpy.zeros((totalMeshCells,1))
-		
+		bflux=.5
 		gamma=1
+		rho=1
+		v=1
 		for eno in range(totalMeshCells):
-
 			index=0
 			for cell in neighbourID[eno]:
-
-				#Boundary Cells need to be treated differently
-				if None in neighbourID[eno]:
-					#BOUNDARY CELL
-					pass
-
+				if cell == None:
+					bMat[eno]=bflux*fArea(MeshPoints,cellFaceID[commonFace[eno,index]])
+					index+=1
 				else:
-					print("indexing", eno, cell)
-					print("commonface",commonFace[eno,index])
-					print(cellface[commonFace[eno,index]])
+					D=gamma*gDiff(MeshPoints,cellFaceID[commonFace[eno,index]],[cellCentroid[eno],cellCentroid[cell]])
+					A=F(rho,numpy.array([1,0]),MeshPoints,cellFaceID[commonFace[eno,index]],[cellCentroid[eno], cellCentroid[cell]])
+					fluxMat[eno,cell]=D*funA(A,D) + max(A,0) 
+					index+=1
+					if eno==6:
+						print(cell,D,A,funA(A,D))
+		#print(neighbourID)	
 
-					fluxMat[eno,cell]=gamma*gDiff(MeshPoints,cellface[commonFace[eno,index]],[cellCentroid[eno],cellCentroid[cell]])
-					print("fluxmat:",fluxMat[eno,cell])
+		#print("flux Matrix: ",fluxMat)
+		#print("B matrix:", bMat)
 
+		return fluxMat, bMat
