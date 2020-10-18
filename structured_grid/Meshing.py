@@ -19,9 +19,4 @@ class struct_mesh:
 
 		self.cvxgrid=np.insert((self.xgrid[1:]+self.xgrid[:-1])/2,[0,self.nx-1],[0,self.lx])
 		self.cvygrid=np.insert((self.ygrid[1:]+self.ygrid[:-1])/2,[0,self.ny-1],[0,self.ly])
-		self.cvzgrid=np.insert((self.zgrid[1:]+self.zgrid[:-1])/2,[0,self.nz-1],[0,self.lz])		
-		
-
-
-
-	
+		self.cvzgrid=np.insert((self.zgrid[1:]+self.zgrid[:-1])/2,[0,self.nz-1],[0,self.lz])

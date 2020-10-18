@@ -32,7 +32,6 @@ def dx(i):
 def dxg(i):
 	if i==xGRID_nos or i==0:
 		return 0
-
 	else:
 		return mesh.xgrid[i]-mesh.xgrid[i-1]
 

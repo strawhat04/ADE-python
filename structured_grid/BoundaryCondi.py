@@ -35,8 +35,7 @@ def FinalMat(m):
 	Sx=np.dot((m.cvygrid[1:]-m.cvygrid[:-1]).reshape(-1,1), (m.cvzgrid[1:]-m.cvzgrid[:-1]).reshape(1,-1))
 	Sy=np.dot((m.cvxgrid[1:]-m.cvxgrid[:-1]).reshape(-1,1), (m.cvzgrid[1:]-m.cvzgrid[:-1]).reshape(1,-1))
 	Sz=np.dot((m.cvygrid[1:]-m.cvygrid[:-1]).reshape(-1,1), (m.cvxgrid[1:]-m.cvxgrid[:-1]).reshape(1,-1))
-
-
+# 	print(Sx)   
 
 	if d==1:
 		aw[0,:,:]=ae[nx,:,:]=0
