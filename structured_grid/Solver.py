@@ -11,7 +11,8 @@ class solver():
         self.ap0=ap0
         self.b=b
         self.c=c
-        print("init set")
+        
+        
     def fun(self,x,y,z):
         return x*self.ap.shape[1]*self.ap.shape[2]+y*self.ap.shape[2]+z
     
@@ -22,12 +23,13 @@ class solver():
         self.phi=np.zeros((int(runtime/dt)+1,self.ap.shape[0],self.ap.shape[1],self.ap.shape[2]))
         print(self.phi.shape)
         self.phi[:,0,:,:]=10
-        print(self.phi[1,0,:,:])
+#         print(self.phi[1,0,:,:])
         
         for t in range(1,self.phi.shape[0]):
             xi=self.phi[t,:,:,:].flatten()
             xf=np.copy(xi)
-            itr=1    
+            itr=1   
+#             print("calculating for t=",t*dt," sec")
             while True:
                 for x in range(1,self.phi.shape[1]):
                     for y in range(1,self.phi.shape[2]):
@@ -47,7 +49,7 @@ class solver():
                             if z < self.phi.shape[3]-1:
                                  xf[i]+=self.af[x,y,z]*xi[self.fun(x,y,z+1)]
                             xf[i]/=self.ap[x,y,z]
-                if np.max(np.absolute(xf-xi))>1e-9:
+                if np.max(np.absolute(xf-xi))>1e-6:
                     xi=np.copy(xf)
                     itr+=1
                     if itr>100:
