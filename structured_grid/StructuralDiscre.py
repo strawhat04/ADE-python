@@ -1,10 +1,9 @@
-#This module discretize the ADE equation and return the flux matrix 
-
+#This module discretize the ADE equation and return the flux matrix
 from Meshing import struct_mesh
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.set_printoptions(threshold=np.inf)
+# np.set_printoptions(threshold=np.inf)
 
 #advection flux coeff
 def F(rho, u, faceArea):
@@ -23,11 +22,11 @@ def funA(F,D):
 		return 0
 	else:
 		return max(0,(1-0.1*abs(F/(D)))**5 )
-		
+
 #control volume element length  in x direction
 def dx(i):
 	return mesh.cvxgrid[i+1]-mesh.cvxgrid[i]
-#Grid element length in x direction 
+#Grid element length in x direction
 def dxg(i):
 	if i==xGRID_nos or i==0:
 		return 0
@@ -44,15 +43,15 @@ def dyg(j):
 		return mesh.ygrid[j]-mesh.ygrid[j-1]
 
 #control volume element width in z direction
-def dz(j):
-	return mesh.cvzgrid[j+1]-mesh.cvzgrid[j]
+def dz(k):
+	return mesh.cvzgrid[k+1]-mesh.cvzgrid[k]
 
 #Grid element width om z direction
-def dzg(j):
-	if j==yGRID_nos or j==0:
+def dzg(k):
+	if k==zGRID_nos or k==0:
 		return 0
 	else:
-		return mesh.zgrid[j]-mesh.zgrid[j-1]
+		return mesh.zgrid[k]-mesh.zgrid[k-1]
 
 
 def LinFlux(struct_mesh):
@@ -60,12 +59,12 @@ def LinFlux(struct_mesh):
 	global mesh
 	mesh=struct_mesh
 
-	global xGRID_nos, yGRID_nos, zGrid_nos
+	global xGRID_nos, yGRID_nos, zGRID_nos
 
 	#total number of mesh grid points
 	xGRID_nos=len(mesh.xgrid)
 	yGRID_nos=len(mesh.ygrid)
-	zGrid_nos=len(mesh.zgrid)
+	zGRID_nos=len(mesh.zgrid)
 
 	#total number of CV grid points
 	CV_xGRID_nos=len(mesh.cvxgrid)
@@ -74,28 +73,28 @@ def LinFlux(struct_mesh):
 
 	#*************************************************************************
 	#the variables accessed from this star box will be imported from module later
-	dt=.1
+	dt=0.1
 	sp=0
 	sc=0
 
-	flow_u=1
-	flow_v=1
-	flow_w=1
-	G0=1
+	flow_u=0
+	flow_v=0
+	flow_w=0
+	G0=0.01
 	irho=1
 
 	#these values to be defined at the CV grid points
-	u=flow_u*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
-	v=flow_v*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
-	w=flow_w*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
-	gamma=G0*np.ones((CV_xGRID_nos,CV_yGRID_nos,CV_zGRID_nos))
-	rho=irho*np.ones((CV_xGRID_nos, CV_yGRID_nos,CV_zGRID_nos))
+	u=flow_u*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
+	v=flow_v*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
+	w=flow_w*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
+	gamma=G0*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
+	rho=irho*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
 
-	
+
 	#*******************************************************************************
 
-	#Function to inititate the flux coefficient array 
-	iniFunc=lambda m: [np.zeros((xGRID_nos,yGRID_nos, zGrid_nos)) for _ in range(m)]
+	#Function to inititate the flux coefficient array
+	iniFunc=lambda m: [np.zeros((zGRID_nos,yGRID_nos,xGRID_nos)) for _ in range(m)]
 
 	#these value are defined at the mesh grid points
 	ae,aw,au,ad,af,ab,ap,ap0,b,d,c=iniFunc(11)
@@ -104,72 +103,35 @@ def LinFlux(struct_mesh):
 	#loop throught every mesh elements to compute the value of flux coefficeints
 	for i in range(0,xGRID_nos):
 		for j in range(0,yGRID_nos):
-			for k in range(0,zGrid_nos):	
-				aw[i,j,k]=D(gamma[i,j,k], dxg(i),dy(j)*dz(k))*funA(F(rho[i,j,k],u[i,j,k], dy(j)*dz(k)),D(gamma[i,j,k], dxg(i), dy(j)*dz(k))) + max(F(rho[i,j,k],u[i,j,k], dy(j)*dz(k)),0)
-				
-				ae[i,j,k]=D(gamma[i+1,j,k], dxg(i+1),dy(j)*dz(k))*funA(F(rho[i+1,j,k],u[i+1,j,k],dy(j)*dz(k)),D(gamma[i+1,j,k], dxg(i+1), dy(j)*dz(k) )) + max(-F(rho[i+1,j,k],u[i+1,j,k],dy(j)*dz(k)),0)	
-				
-				ad[i,j,k]=D(gamma[i,j,k], dyg(j),dx(i)*dz(k))*funA(F(rho[i,j,k],v[i,j,k], dx(i)*dz(k)),D(gamma[i,j,k], dyg(j), dx(i)*dz(k))) + max(F(rho[i,j,k],v[i,j,k], dx(i)*dz(k)),0)
+			for k in range(0,zGRID_nos):
+				aw[k,j,i]=D(gamma[k,j,i], dxg(i),dy(j)*dz(k))*funA(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),D(gamma[k,j,i], dxg(i), dy(j)*dz(k))) + max(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),0)
 
-				au[i,j]=D(gamma[i,j+1,k], dyg(j+1), dx(i)*dz(k))*funA(F(rho[i,j+1,k],v[i,j+1,k],dx(i)*dz(k)),D(gamma[i,j+1,k], dyg(j+1), dx(i)*dz(k))) + max(-F(rho[i,j+1,k],v[i,j+1,k],dx(i)*dz(k)),0)	
-				
-				ab[i,j,k]=D(gamma[i,j,k], dzg(k),dx(i)*dy(j))*funA(F(rho[i,j,k],w[i,j,k], dx(i)*dy(j)),D(gamma[i,j,k], dzg(k), dx(i)*dy(j))) + max(F(rho[i,j,k],w[i,j,k], dx(i)*dy(j)),0)
+				ae[k,j,i]=D(gamma[k,j,i+1], dxg(i+1),dy(j)*dz(k))*funA(F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),D(gamma[k,j,i+1], dxg(i+1), dy(j)*dz(k) )) + max(-F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),0)
 
-				af[i,j,k]=D(gamma[i,j,k+1], dzg(k+1),dx(i)*dy(j))*funA(F(rho[i,j,k+1],w[i,j,k+1],dx(i)*dy(j)),D(gamma[i,j,k+1], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[i,j,k+1],w[i,j,k+1],dx(i)*dy(j)),0)	
+				ad[k,j,i]=D(gamma[k,j,i], dyg(j),dx(i)*dz(k))*funA(F(rho[k,j,i],v[k,j,i], dx(i)*dz(k)),D(gamma[k,j,i], dyg(j), dx(i)*dz(k))) + max(F(rho[k,j,i],v[k,j,i], dx(i)*dz(k)),0)
 
-				c[i,j,k]= sp*dx(i)*dy(j)
-				ap0[i,j,k]=rho[i,j,k]*dx(i)*dy(j)/dt	
-				b[i,j,k]=sc*dx(i)*dy(j) # +ap0[i]*phi[t-1,i]
+				au[k,i,j]=D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))*funA(F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))) + max(-F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),0)
 
-	
+				ab[k,j,i]=D(gamma[k,j,i], dzg(k),dx(i)*dy(j))*funA(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),D(gamma[k,j,i], dzg(k), dx(i)*dy(j))) + max(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),0)
+
+				af[k,j,i]=D(gamma[k+1,j,i], dzg(k+1),dx(i)*dy(j))*funA(F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),D(gamma[k+1,j,i], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[k+1,j,i],w[k,j,i+1],dx(i)*dy(j)),0)
+
+				c[k,j,i]= sp*dx(i)*dy(j)*dz(k)
+				ap0[k,j,i]=rho[k,j,i]*dx(i)*dy(j)*dz(k)/dt
+				b[k,j,i]=sc*dx(i)*dy(j)*dz(k) # +ap0[i]*phi[t-1,i]
+
 	ap=aw+ae+ad+au+ab+af+ap0-c
+	return ap,aw,ae,ad,au,ab,af,ap0,b
 
-
-	#NOW COMPUTING BOUNDARY FLUX COEFFICIENT 
-	
-	#last element index of each array
-	nx=xGRID_nos-1
-	ny=yGRID_nos-1
-	nz=zGrid_nos-1
-
-	#array storing face area of each control volume element in face normal to x axis
-	Sx=np.dot((mesh.cvygrid[1:]-mesh.cvygrid[:-1]).reshape(-1,1), (mesh.cvzgrid[1:]-mesh.cvzgrid[:-1]).reshape(1,-1))
-	#array storing face area of each control volume element in face normal to y axis
-	Sy=np.dot((mesh.cvxgrid[1:]-mesh.cvxgrid[:-1]).reshape(-1,1), (mesh.cvzgrid[1:]-mesh.cvzgrid[:-1]).reshape(1,-1))
-	#array storing face area of each control volume element in face normal to z axis
-	Sz=np.dot((mesh.cvygrid[1:]-mesh.cvygrid[:-1]).reshape(-1,1), (mesh.cvxgrid[1:]-mesh.cvxgrid[:-1]).reshape(1,-1))
-
-	print("Imput Boundary Conditions as: D/N x0 y0 z0 xn yn zn")
-	bc,x0,y0,z0,xn,yn,zn=input().split(' ')
-
-	#Computing flux coefficient for dirichlet condition
-	if bc=='D' or bc=='d':
-		aw[0,:,:]=ae[nx,:,:]=0
-		b[0,:,:]=float(x0)*np.multiply(rho[0,1:,1:],u[0,1:,1:],Sx)
-		b[nx,:,:]=np.multiply(rho[0,1:,1:],u[0,1:,1:],Sx)*float(xn)
-
-		ad[:,0,:]=au[:,ny,:]=0
-		b[:,0,:]=np.multiply(rho[1:,0,1:],v[1:,0,1:],Sy)*float(y0)
-		b[:,ny,:]=np.multiply(rho[1:,ny,1:],v[1:,ny,1:],Sy)*float(yn)
-
-		ab[:,:,0]=af[:,:,nz]=0
-		b[:,:,0]=np.multiply(rho[1:,1:,0],w[1:,1:,0],Sz)*float(z0)
-		b[:,:,nz]=np.multiply(rho[1:,1:,nz],w[1:,1:,nz],Sz)*float(zn)
-
-	#Computing flux coefficient for Neumann condition
-	if bc=='N' or bc=='n':
-		aw[0,:,:]=ae[nx,:,:]=0
-		b[0,:,:]=float(x0)*Sx
-		b[nx,:,:]=float(xn)*Sx
-
-		ad[:,0,:]=au[:,ny,:]=0
-		b[:,0,:]=float(y0)*Sy
-		b[0,ny,:]=float(yn)*Sy
-
-		ab[:,:,0]=af[:,:,nz]=0
-		b[:,:,0]=float(z0)*Sz
-		b[:,:,nz]=float(zn)*Sz
-
-	return ap,aw,ae,ad,au,ab,af,ap0,b,c
-	
-
+# class conditions():
+# 	def  __init__(self,struct_mesh):
+#         ap,aw,ae,ad,au,ab,af,ap0,b=LinFlux(struct_mesh)
+#         self.ap=ap
+#         self.aw=aw
+#         self.ae=ae
+#         self.ad=ad
+#         self.au=au
+#         self.ab=ab
+#         self.af=af
+#         self.ap0=ap0
+#         self.b=b

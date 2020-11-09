@@ -47,7 +47,7 @@ def funA(F,D):
 #this function will only work for pygmsh, for different module you need to change algo to find the mesh element face location 
 def get_Bcondition(MeshCoordi,c_cell,c_ni_faceNodes,cellCentroid):
 	#input the boundary condition here, as in array of face1, face2, face3......
-	phif=numpy.array([2,5,0,0])
+	phif=numpy.array([5,0,0,0])
 	#specify type of boundary conditon
 	#'d' > dicirchelt          'n' > neumann
 	bc='d'
@@ -86,7 +86,7 @@ class linMatrix:
 	@staticmethod
 	def get_linMatrix(pymesh, custom_mesh, dt, phi0):
 		global gamma, rho, ux, uy
-		gamma=1
+		gamma=0
 		rho=1
 		ux,uy=[1,0]
 
@@ -135,12 +135,12 @@ class linMatrix:
 					A=F(rho,numpy.array([ux,uy]),MeshCoordi,c_ni_faceNodes,[cellCentroid[c_cell], cellCentroid[n_cell]])
 					#General scheme by Patankar 
 					fluxMat[c_cell,n_cell]=-(D*funA(A,D) + max(A,0)) 
-					bMat[c_cell]+=rho*cellvolume[c_cell]*phi0[c_cell]/dt
+					
 				n_index+=1
 
 			#if flag==1:
 			#	bMat[c_cell]+=rho*cellvolume[c_cell]*phi0[c_cell]/dt		
-			
-			fluxMat[c_cell,c_cell]+= -( numpy.sum(fluxMat[c_cell,:]) - fluxMat[c_cell,c_cell] ) + rho*cellvolume[c_cell]*phi0[c_cell]/dt
+			bMat[c_cell]+=rho*cellvolume[c_cell]*phi0[c_cell]/dt
+			fluxMat[c_cell,c_cell]+= -( numpy.sum(fluxMat[c_cell,:]) - fluxMat[c_cell,c_cell] ) + rho*cellvolume[c_cell]/dt
 
 		return fluxMat, bMat

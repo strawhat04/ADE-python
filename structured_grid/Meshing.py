@@ -17,7 +17,7 @@ class struct_mesh:
 
 	#we gonna store each axes dimension grid topology in respective grid array
 	def generate_mesh(self):
-		#place n grid points between 0 and length in respecive grid array to 
+		#place n grid points between 0 and length in respecive grid array to
 		self.xgrid=np.linspace(0.0,self.lx,num=self.nx, dtype=float)
 		self.ygrid=np.linspace(0.0,self.ly,num=self.ny, dtype=float)
 		self.zgrid=np.linspace(0.0,self.lz,num=self.nz, dtype=float)
