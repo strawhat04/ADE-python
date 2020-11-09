@@ -110,7 +110,7 @@ def LinFlux(struct_mesh):
 
 				ad[k,j,i]=D(gamma[k,j,i], dyg(j),dx(i)*dz(k))*funA(F(rho[k,j,i],v[k,j,i], dx(i)*dz(k)),D(gamma[k,j,i], dyg(j), dx(i)*dz(k))) + max(F(rho[k,j,i],v[k,j,i], dx(i)*dz(k)),0)
 
-				au[k,i,j]=D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))*funA(F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))) + max(-F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),0)
+				au[k,j,i]=D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))*funA(F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))) + max(-F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),0)
 
 				ab[k,j,i]=D(gamma[k,j,i], dzg(k),dx(i)*dy(j))*funA(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),D(gamma[k,j,i], dzg(k), dx(i)*dy(j))) + max(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),0)
 
