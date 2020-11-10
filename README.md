@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+# ADE-python
+A python Based Advection Diffusion Solver
+=======
 # ADE-Python
 
 ## Introduction
@@ -35,3 +39,4 @@ by using very fine meshing and compromising computational time
 ![gih](https://media.giphy.com/media/UhH90i5qBMcz0vdHRw/giphy.gif)
 
 You can see the False Diffusion in advection direction. But don't worry this solver works good for simulations when your Peclet No. is less that 10.
+>>>>>>> 75a9bddc1acb647788c32563bd483572713b3b28

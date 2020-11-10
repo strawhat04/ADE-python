@@ -1,10 +1,9 @@
-#This module discretize the ADE equation and return the flux matrix 
-
+#This module discretize the ADE equation and return the flux matrix
 from Meshing import struct_mesh
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.set_printoptions(threshold=np.inf)
+# np.set_printoptions(threshold=np.inf)
 
 #advection flux coeff
 def F(rho, u, faceArea):
@@ -23,15 +22,14 @@ def funA(F,D):
 		return 0
 	else:
 		return max(0,(1-0.1*abs(F/(D)))**5 )
-		
+
 #control volume element length  in x direction
 def dx(i):
 	return mesh.cvxgrid[i+1]-mesh.cvxgrid[i]
-#Grid element length in x direction 
+#Grid element length in x direction
 def dxg(i):
 	if i==xGRID_nos or i==0:
 		return 0
-
 	else:
 		return mesh.xgrid[i]-mesh.xgrid[i-1]
 #control volume element length  in y direction
@@ -79,7 +77,7 @@ def LinFlux(struct_mesh):
 	sp=0
 	sc=0
 
-	flow_u=0	
+	flow_u=0
 	flow_v=0
 	flow_w=0
 	G0=0.01
@@ -92,10 +90,10 @@ def LinFlux(struct_mesh):
 	gamma=G0*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
 	rho=irho*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
 
-	
+
 	#*******************************************************************************
 
-	#Function to inititate the flux coefficient array 
+	#Function to inititate the flux coefficient array
 	iniFunc=lambda m: [np.zeros((zGRID_nos,yGRID_nos,xGRID_nos)) for _ in range(m)]
 
 	#these value are defined at the mesh grid points
@@ -105,24 +103,35 @@ def LinFlux(struct_mesh):
 	#loop throught every mesh elements to compute the value of flux coefficeints
 	for i in range(0,xGRID_nos):
 		for j in range(0,yGRID_nos):
-			for k in range(0,zGRID_nos):	
+			for k in range(0,zGRID_nos):
 				aw[k,j,i]=D(gamma[k,j,i], dxg(i),dy(j)*dz(k))*funA(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),D(gamma[k,j,i], dxg(i), dy(j)*dz(k))) + max(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),0)
 
-				ae[k,j,i]=D(gamma[k,j,i+1], dxg(i+1),dy(j)*dz(k))*funA(F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),D(gamma[k,j,i+1], dxg(i+1), dy(j)*dz(k) )) + max(-F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),0)	
-				
+				ae[k,j,i]=D(gamma[k,j,i+1], dxg(i+1),dy(j)*dz(k))*funA(F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),D(gamma[k,j,i+1], dxg(i+1), dy(j)*dz(k) )) + max(-F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),0)
+
 				ad[k,j,i]=D(gamma[k,j,i], dyg(j),dx(i)*dz(k))*funA(F(rho[k,j,i],v[k,j,i], dx(i)*dz(k)),D(gamma[k,j,i], dyg(j), dx(i)*dz(k))) + max(F(rho[k,j,i],v[k,j,i], dx(i)*dz(k)),0)
 
-				au[k,i,j]=D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))*funA(F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))) + max(-F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),0)	
-				
+				au[k,j,i]=D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))*funA(F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),D(gamma[k,j+1,i], dyg(j+1), dx(i)*dz(k))) + max(-F(rho[k,j+1,i],v[k,j+1,i],dx(i)*dz(k)),0)
+
 				ab[k,j,i]=D(gamma[k,j,i], dzg(k),dx(i)*dy(j))*funA(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),D(gamma[k,j,i], dzg(k), dx(i)*dy(j))) + max(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),0)
 
-				af[k,j,i]=D(gamma[k+1,j,i], dzg(k+1),dx(i)*dy(j))*funA(F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),D(gamma[k+1,j,i], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[k+1,j,i],w[k,j,i+1],dx(i)*dy(j)),0)	
+				af[k,j,i]=D(gamma[k+1,j,i], dzg(k+1),dx(i)*dy(j))*funA(F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),D(gamma[k+1,j,i], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[k+1,j,i],w[k,j,i+1],dx(i)*dy(j)),0)
 
 				c[k,j,i]= sp*dx(i)*dy(j)*dz(k)
-				ap0[k,j,i]=rho[k,j,i]*dx(i)*dy(j)*dz(k)/dt	
+				ap0[k,j,i]=rho[k,j,i]*dx(i)*dy(j)*dz(k)/dt
 				b[k,j,i]=sc*dx(i)*dy(j)*dz(k) # +ap0[i]*phi[t-1,i]
 
 	ap=aw+ae+ad+au+ab+af+ap0-c
-	return ap,aw,ae,ad,au,ab,af,ap0,b,c
-	
+	return ap,aw,ae,ad,au,ab,af,ap0,b
 
+# class conditions():
+# 	def  __init__(self,struct_mesh):
+#         ap,aw,ae,ad,au,ab,af,ap0,b=LinFlux(struct_mesh)
+#         self.ap=ap
+#         self.aw=aw
+#         self.ae=ae
+#         self.ad=ad
+#         self.au=au
+#         self.ab=ab
+#         self.af=af
+#         self.ap0=ap0
+#         self.b=b

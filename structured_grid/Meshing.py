@@ -17,7 +17,7 @@ class struct_mesh:
 
 	#we gonna store each axes dimension grid topology in respective grid array
 	def generate_mesh(self):
-		#place n grid points between 0 and length in respecive grid array to 
+		#place n grid points between 0 and length in respecive grid array to
 		self.xgrid=np.linspace(0.0,self.lx,num=self.nx, dtype=float)
 		self.ygrid=np.linspace(0.0,self.ly,num=self.ny, dtype=float)
 		self.zgrid=np.linspace(0.0,self.lz,num=self.nz, dtype=float)
@@ -25,9 +25,4 @@ class struct_mesh:
 		#to create cv grid, first place points in middle of two adjecant mesh grid points and include 0 and length point at boundary
 		self.cvxgrid=np.insert((self.xgrid[1:]+self.xgrid[:-1])/2,[0,self.nx-1],[0,self.lx])
 		self.cvygrid=np.insert((self.ygrid[1:]+self.ygrid[:-1])/2,[0,self.ny-1],[0,self.ly])
-		self.cvzgrid=np.insert((self.zgrid[1:]+self.zgrid[:-1])/2,[0,self.nz-1],[0,self.lz])		
-		
-
-
-
-	
+		self.cvzgrid=np.insert((self.zgrid[1:]+self.zgrid[:-1])/2,[0,self.nz-1],[0,self.lz])

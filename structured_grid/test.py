@@ -1,3 +1,23 @@
+# <<<<<<< HEAD
+# from Solver import solver
+# from Meshing import struct_mesh
+# from StructuralDiscre import LinFlux
+# import numpy as np
+# import time
+
+# if __name__=='__main__':
+#     meshg=struct_mesh(dimensions,mesh_elem)
+#     meshg.generate_mesh()
+#     ap,aw,ae,ad,au,ab,af,ap0,b,c=LinFlux(meshg)
+#     solver=solver(ap,aw,ae,ad,au,ab,af,ap0,b,c)
+#     phi=solver.solve1()
+#     phi2=solver.solve2()
+#     print(phi[1,1,1:,1:])
+#     print(" #####dif#####")
+#     print(phi2[1,1,1:-1,1:-1])
+
+    
+# =======
 from Meshing import struct_mesh
 from StructuralDiscre import LinFlux
 #from Discretization import LinMat
@@ -13,10 +33,11 @@ def tr(a):
 runtime=1
 dt=0.1
 
-xGRID_nos=20
-yGRID_nos=20
-zGRID_nos=20
-
+xGRID_nos=10
+yGRID_nos=10
+zGRID_nos=10
+# tp=time.perf_counter()
+# print("Time Taken:",time.perf_counter()-tp)
 mesh=struct_mesh([1,1,1], [xGRID_nos,yGRID_nos,zGRID_nos])
 mesh.generate_mesh()
 print("grid: ",mesh.xgrid)
@@ -133,3 +154,4 @@ def update(t):
 sim= animation.FuncAnimation(fig,update, frames=range(0,len(phi[:,0,0])), interval=500, repeat=False)
 plt.show()
 #+#np.multiply(aw[1:-1,1:-1,1:-1],phi[t,1:-3,2:-2,2:-2])+np.multiply(ae[1:-1,1:-1,1:-1],phi[t,3:-1,2:-2,2:-2])+np.multiply(au[1:-1,1:-1,1:-1],phi[t,2:-2,3:-1,2:-2])+np.multiply(ad[1:-1,1:-1,1:-1], phi[t,2:-2,1:-3,2:-2])+
+>>>>>>> 75a9bddc1acb647788c32563bd483572713b3b28
