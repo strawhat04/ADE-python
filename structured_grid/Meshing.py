@@ -3,16 +3,16 @@ import numpy as np
 #Class for creating 3D structured mess
 class struct_mesh:
 
-	def __init__(self, dim, ele_nos):
+	def __init__(self, dim, grid_nos):
 		#instanciate the length, height and width
 		self.lx=dim[0]
 		self.ly=dim[1]
 		self.lz=dim[2]
 
 		#instanciate the number of mesh elements in respective direction
-		self.nx=ele_nos[0]
-		self.ny=ele_nos[1]
-		self.nz=ele_nos[2]
+		self.nx=grid_nos[0]
+		self.ny=grid_nos[1]
+		self.nz=grid_nos[2]
 
 
 	#we gonna store each axes dimension grid topology in respective grid array
