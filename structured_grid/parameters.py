@@ -2,20 +2,25 @@
 import numpy as np
 
 
-runtime=3	#simulation time
-dt=0.05		#time step
+runtime=1	#simulation time
+dt=0.1		#time step
 
 #put your velocity model here, it may be function or you can import from a file
 #keep the dimension in mind
+
 def velocity_model(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos):
-	flow_u=0
-	flow_v=0
-	flow_w=0
+	flow_u=1
+	flow_v=1
+	flow_w=-1
 
 	#need to difine at cv inteference points
 	u=flow_u*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
 	v=flow_v*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
 	w=flow_w*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
+
+	assert u.shape==(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos), "inncorect, shape of u"
+	assert v.shape==(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos), "inncorect, shape of v"
+	assert w.shape==(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos), "inncorect, shape of w"
 
 	return u,v,w
 
@@ -36,6 +41,8 @@ def diffusion_model(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos):
 	# 		if u[i,j]!=0 and v[i,j]!=0:
 	# 			theta=atan(v[i,j]/u[i,j])
 	# 			gamma[i,j]=gamma[i,j]-rho[i,j]*sqrt(u[i,j]**2+v[i,j]**2)*dxg(i)*dyg(j)*sin(2*theta)/(4*dyg(j)*sin(theta)**3+4*dxg(i)*cos(theta)**3) 
+	
+	assert gamma.shape==(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos), "inncorect, shape of gamma"
 	return gamma
 
 
@@ -47,6 +54,7 @@ def density_model(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos):
 	#need to difine at cv inteference points
 	rho=r0*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
 
+	assert rho.shape==(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos), "inncorect, shape of rho"
 	return rho
 
 
@@ -59,6 +67,9 @@ def source_model(zGRID_nos,yGRID_nos,xGRID_nos):
 	#need to be defined at all grid points
 	sp=sp0*np.ones((zGRID_nos,yGRID_nos,xGRID_nos))
 	sc=sc0*np.ones((zGRID_nos,yGRID_nos,xGRID_nos))
+
+	assert sp.shape==(zGRID_nos,yGRID_nos,xGRID_nos), "inncorect,shape of sp"
+	assert sc.shape==(zGRID_nos,yGRID_nos,xGRID_nos), "inncorect,shape of sc"
 
 	return sc, sp
 
