@@ -1,7 +1,8 @@
 #This module discretize the ADE equation and return the flux matrix
 
 #import module
-from Meshing import struct_mesh
+
+#from Meshing import struct_mesh
 from parameters import *
 
 #import numpy modules
@@ -81,6 +82,7 @@ def LinFlux(struct_mesh):
 	CV_zGRID_nos=len(mesh.cvzgrid)
 
 	#*************************************************************************
+	
 	#these values to be imported from the parameter module
 	u,v,w=velocity_model(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos)
 	
@@ -103,7 +105,7 @@ def LinFlux(struct_mesh):
 	#loop throught every mesh elements to compute the value of flux coefficeints
 	#Refer Readme to know more 
 	for i in range(0,xGRID_nos):
-		for j in range(0,xGRID_nos):
+		for j in range(0,yGRID_nos):
 			for k in range(0,zGRID_nos):
 				#aw=
 				aw[k,j,i]=D(gamma[k,j,i], dxg(i),dy(j)*dz(k))*funA(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),D(gamma[k,j,i], dxg(i), dy(j)*dz(k))) + max(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),0)
@@ -116,13 +118,14 @@ def LinFlux(struct_mesh):
 
 				ab[k,j,i]=D(gamma[k,j,i], dzg(k),dx(i)*dy(j))*funA(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),D(gamma[k,j,i], dzg(k), dx(i)*dy(j))) + max(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),0)
 
-				af[k,j,i]=D(gamma[k+1,j,i], dzg(k+1),dx(i)*dy(j))*funA(F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),D(gamma[k+1,j,i], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[k+1,j,i],w[k,j,i+1],dx(i)*dy(j)),0)
+				af[k,j,i]=D(gamma[k+1,j,i], dzg(k+1),dx(i)*dy(j))*funA(F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),D(gamma[k+1,j,i], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),0)
 
 				c[k,j,i]= sp[k,j,i]*dx(i)*dy(j)*dz(k)
 				ap0[k,j,i]=rho[k,j,i]*dx(i)*dy(j)*dz(k)/dt
 				b[k,j,i]=sc[k,j,i]*dx(i)*dy(j)*dz(k) # +ap0[i]*phi[t-1,i]
 
 	ap=aw+ae+ad+au+ab+af+ap0-c
+
 	return ap,aw,ae,ad,au,ab,af,ap0,b
 
 # class conditions():
