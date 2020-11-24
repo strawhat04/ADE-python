@@ -6,12 +6,13 @@ from parameters import runtime, dt
 
 print("runttime",runtime)
 #Class to solver
-class Solver(struct_mesh):
+class solverCLS(struct_mesh):
     runtime=runtime
     dt=dt
     def  __init__(self,struct_mesh):
         self.dim=np.array([struct_mesh.nz,struct_mesh.ny,struct_mesh.nx])
         self.ap,self.aw,self.ae,self.ad,self.au,self.ab,self.af,self.ap0,self.b=LinFlux(struct_mesh)
+        self.bc = None
         # self.ap=ap
         # self.aw=aw
         # self.ae=ae
@@ -28,7 +29,7 @@ class Solver(struct_mesh):
     #     return x*self.ap.shape[1]*self.ap.shape[2]+y*self.ap.shape[2]+z
 
     def set_conditions(self,mesh):
-        iphi=0
+        iphi=-1
         self.phi=iphi*np.ones((int(self.runtime/self.dt)+1,mesh.nz+2,mesh.ny+2,mesh.nx+2)) #include 2 ghost nodes
         print(self.phi.shape)
 
@@ -46,18 +47,18 @@ class Solver(struct_mesh):
         Sz=np.dot((mesh.cvygrid[1:]-mesh.cvygrid[:-1]).reshape(-1,1), (mesh.cvxgrid[1:]-mesh.cvxgrid[:-1]).reshape(1,-1))
 
         #print("Imput Boundary Conditions as: D/N x0 y0 z0 xn yn zn")
-        bc,x0,y0,z0,xn,yn,zn=['d',4,9,0,2,7,0]
+        self.bc,x0,y0,z0,xn,yn,zn=['d',5,4,1,6,2,9]
         #Computing flux coefficient for dirichlet condition
-        if bc=='D' or bc=='d':
-            self.phi[:,:,:,1]=x0
+        if self.bc=='D' or self.bc=='d':
             self.phi[:,:,1,:]=y0
             self.phi[:,1,:,:]=z0
+            self.phi[:,:,:,1]=x0
             self.phi[:,:,:,mesh.nx]=xn
             self.phi[:,:,mesh.ny,:]=yn
             self.phi[:,mesh.nz,:,:]=zn
 
         #Computing flux coefficient for Neumann condition
-        if bc=='N' or bc=='n':
+        if self.bc=='N' or self.bc=='n':
             self.aw[:,:,0]=self.ae[:,:,nx]=0
             self.b[:,:,0]+=float(x0)*Sx
             self.b[:,:,nx]+=float(xn)*Sx
@@ -157,28 +158,38 @@ class Solver(struct_mesh):
             error_init=0
             self.phi[t,:,:,:]=self.phi[t-1,:,:,:]
             while True:
-                for i in range(1, self.dim[2]-1):
+
+                for i in range(1, self.dim[2]):
                     #                               self.b[k,j,i]+self.ap0[k,j,i]*self.phi[t-1,k+1,j+1,i+1]
-                    d[:,1:-1,i]=self.b[:,1:-1,i]+np.multiply(self.ap0[:,1:-1,i],self.phi[t-1,1:self.dim[0]+1,2:self.dim[1],i+1])
+                    d[:,:,i]=self.b[:,:,i]+np.multiply(self.ap0[:,:,i],self.phi[t-1,1:self.dim[0]+1,1:self.dim[1]+1,i+1])
                     #                               self.au[k,j,i]*self.phi[t,k+1,j+1+1,i+1]
-                    d[:,1:-1,i]+=np.multiply(self.au[:,1:-1,i],self.phi[t,1:self.dim[0]+1,3:self.dim[1]+1,i+1])
+                    d[:,:,i]+=np.multiply(self.au[:,:,i],self.phi[t,1:self.dim[0]+1,2:self.dim[1]+2,i+1])
 
                     #                               self.ad[k,j,i]*self.phi[t,k+1,j,i+1]
-                    d[:,1:-1,i]+=np.multiply(self.ad[:,1:-1,i],self.phi[t,1:self.dim[0]+1,1:self.dim[1]-1,i+1])
+                    d[:,:,i]+=np.multiply(self.ad[:,:,i],self.phi[t,1:self.dim[0]+1,:self.dim[1],i+1])
                                                     # self.af[k,j,i]*self.phi[t,k+1+1,j+1,i+1]
-                    d[:,1:-1,i]+=np.multiply(self.af[:,1:-1,i],self.phi[t,2:self.dim[0]+2,2:self.dim[1],i+1])
+                    d[:,:,i]+=np.multiply(self.af[:,:,i],self.phi[t,2:self.dim[0]+2,1:self.dim[1]+1,i+1])
 
                                              # self.ab[k,j,i]*self.phi[t,k+1-1,j+1,i+1]
-                    d[:,1:-1,i]+=np.multiply(self.ab[:,1:-1,i],self.phi[t,:self.dim[0],2:self.dim[1],i+1])
-                    R[:,1:-1,i+1]=self.ae[:,1:-1,i]/(self.ap[:,1:-1,i]-self.aw[:,1:-1,i]*R[:,1:-1,i])
-                    Q[:,1:-1,i+1]=(d[:,1:-1,i]+self.aw[:,1:-1,i]*Q[:,1:-1,i])/(self.ap[:,1:-1,i]-self.aw[:,1:-1,i]*R[:,1:-1,i])
+                    d[:,:,i]+=np.multiply(self.ab[:,:,i],self.phi[t,:self.dim[0],1:self.dim[1]+1,i+1])
+                    R[:,:,i+1]=self.ae[:,:,i]/(self.ap[:,:,i]-self.aw[:,:,i]*R[:,:,i])
+                    Q[:,:,i+1]=(d[:,:,i]+self.aw[:,:,i]*Q[:,:,i])/(self.ap[:,:,i]-self.aw[:,:,i]*R[:,:,i])
 
-                
-                for i in range(self.dim[2]-1,-1,-1):
+                #Forced TDMA Boundary Condition
+                Q[:,:,1]=self.phi[0,0,0,1]
+                R[:,:,1]=0
+                Q[:,:,mesh.nx]=self.phi[0,0,0,mesh.nx]
+                R[:,:,mesh.nx]=0
+
+                for i in range(self.dim[2]-1,0,-1):
                     # self.phi[t,k+1,j+1,i+1]=R[i+1]*self.phi[t,k+1,j+1,i+2]+Q[i+1]
-                    self.phi[t,1:self.dim[0]+1,2:self.dim[1],i+1]=np.multiply(R[:,1:-1,i+1],self.phi[t,1:self.dim[0]+1,2:self.dim[1],i+2]) +Q[:,1:-1,i+1]
+                    self.phi[t,1:self.dim[0]+1,1:self.dim[1]+1,i+1]=np.multiply(R[:,:,i+1],self.phi[t,1:self.dim[0]+1,1:self.dim[1]+1,i+2]) +Q[:,:,i+1]
                 
-                self.phi[t,:,1,:]=self.phi[t-1,:,1,:]
+                if self.bc=='D' or self.bc=='d':
+                    self.phi[t,:,1,:]=self.phi[t-1,:,1,:]
+                    self.phi[t,:,mesh.ny,:]=self.phi[t-1,:,mesh.ny,:]
+                    self.phi[t,1,:,:]=self.phi[t-1,1,:,:]
+                    self.phi[t,mesh.nz,:,:]=self.phi[t-1,mesh.nz,:,:]
 
                 rdue=self.phi[t,2:-2,2:-2,2:-2]-np.divide((np.multiply(self.aw[1:-1,1:-1,1:-1],self.phi[t,2:-2,2:-2,1:-3])+np.multiply(self.ae[1:-1,1:-1,1:-1],self.phi[t,2:-2,2:-2,3:-1])+np.multiply(self.au[1:-1,1:-1,1:-1],self.phi[t,2:-2,3:-1,2:-2])+np.multiply(self.ad[1:-1,1:-1,1:-1], self.phi[t,2:-2,1:-3,2:-2])+np.multiply(self.af[1:-1,1:-1,1:-1],self.phi[t,3:-1,2:-2,2:-2])+np.multiply(self.ab[1:-1,1:-1,1:-1], self.phi[t,1:-3,2:-2,2:-2])+self.b[1:-1,1:-1,1:-1]+ np.multiply(self.ap0[1:-1,1:-1,1:-1],self.phi[t-1,2:-2,2:-2,2:-2])),self.ap[1:-1,1:-1,1:-1])
 
