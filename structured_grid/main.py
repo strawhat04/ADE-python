@@ -5,7 +5,7 @@ from vtk.util.numpy_support import numpy_to_vtk
 import vtk
 # import time
 
-    
+
 if __name__=='__main__':
     # tp=time.perf_counter()
     # p1=solver.solve2(meshg)
@@ -31,22 +31,23 @@ if __name__=='__main__':
 #     print("fast tdma taken time:",time.perf_counter()-tp)
 
 #     np.savez('phi_10x10x10.npz', phi)
-    
+
     data=np.load('phi_10x10x10.npz')
     phi=  data['arr_0']
-    phi=phi[:,1:-1,1:-1,1:-1]
+     phi=phi[:,:-1,:-1,:-1]
     dims= phi.shape[1:]
     print(dims)
     print(phi.shape)
 
 
     colors = vtk.vtkNamedColors()
-    
+
     sgrid = vtk.vtkStructuredGrid()
     sgrid.SetDimensions(dims)
     points = vtk.vtkPoints()
     data=vtk.vtkDoubleArray()
     data.SetNumberOfComponents(1)
+    # cells=vtk.vtkCellData()
 
     for i in range(dims[0]):
         id=i*(dims[1]*dims[2])
@@ -59,10 +60,10 @@ if __name__=='__main__':
     data.SetName("phi_val");
     sgrid.GetPointData().SetScalars(data)
     print(sgrid.GetScalers())
-
+    print(sgrid.GetNumberOfCells())
     # print(sgrid.GetNumberOfPoints())
 #     print(sgrid.GetPointData().GetArray())
-    
+
 
     # sgridMapper = vtk.vtkPolyDataMapper()
     # sgridMapper.SetInputConnection(hedgehog.GetOutputPort())
@@ -89,14 +90,14 @@ if __name__=='__main__':
     # # Interact with the data.
     # renWin.Render()
     # iren.Start()
-   
+
 
 """
 
     phi = np.swapaxes(phi,1,3)
     xx,yy,zz= np.meshgrid(meshg.xgrid,meshg.ygrid,meshg.zgrid,indexing='ij')
     print(xx.shape)
-    
+
     mlab.clf()
     pt = mlab.figure(size=(800,700))
     cphi=phi[0,1:-1,1:-1,1:-1]
@@ -112,7 +113,7 @@ if __name__=='__main__':
 #             mlab.outline()
             mlab.axes()
             mlab.savefig(filename ='ani_%02d.png'%t)
-            yield          
+            yield
     anim()
     mlab.view(distance=5)
     mlab.show()
@@ -130,10 +131,10 @@ if __name__=='__main__':
     os.system('convert @images.txt {}.gif'.format("10x10x10_X_axix_YlOrBr")) # On windows convert is 'magick'
     [os.remove(ff) for ff in files]
     os.remove('images.txt')
-    
+
 #     ani = ArtistAnimation(files, interval=50, blit=True,repeat_delay=1000)
 #     ani.save('dynamic_images.gif')
-    
+
 #     fig = plt.figure()
 #     ax = plt.axes(projection='3d')
 #     ax.contourf(phi[2,1:-1,1:-1,1:-1], 20 , cmap = "RdGy")
