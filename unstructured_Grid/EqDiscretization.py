@@ -65,12 +65,16 @@ def get_Bcondition(MeshCoordi,c_cell,c_ni_faceNodes,cellCentroid):
 		if bfaceArray[i,0] in [0,1,2,3]:
 			findx=bfaceArray[i,0]
 	
+
 	if bc=='d':
 		#computing boundary flux for Dirichlet conditon 
 		Db=gamma*gDiff(MeshCoordi,c_ni_faceNodes,[cellCentroid[c_cell], (MeshCoordi[bp1]+MeshCoordi[bp2])/2])
 		Ab=F(rho,numpy.array([ux,uy]),MeshCoordi,c_ni_faceNodes,[cellCentroid[c_cell], (MeshCoordi[bp1]+MeshCoordi[bp2])/2])
-		fmat=Db
+		fmat=(Db*funA(Ab,Db) + max(Ab,0))
+
 		bmat=(Db*funA(Ab,Db) + max(Ab,0))*phif[findx] 
+
+		#print("incell",c_cell,phif[findx],bmat)
 
 	if bc=='n':
 		#computing boundary flux for Neumann condition
@@ -80,7 +84,6 @@ def get_Bcondition(MeshCoordi,c_cell,c_ni_faceNodes,cellCentroid):
 	return fmat, bmat
 		
 class linMatrix:
-
 	#this function compute transient value of scalar for ADE equation at t step
 	#dt is time step and ph0 is t-1 calue
 	@staticmethod
@@ -135,12 +138,14 @@ class linMatrix:
 					A=F(rho,numpy.array([ux,uy]),MeshCoordi,c_ni_faceNodes,[cellCentroid[c_cell], cellCentroid[n_cell]])
 					#General scheme by Patankar 
 					fluxMat[c_cell,n_cell]=-(D*funA(A,D) + max(A,0)) 
-					
+					#print("face",c_cell, c_ni_faceNodes, A)
 				n_index+=1
 
 			#if flag==1:
 			#	bMat[c_cell]+=rho*cellvolume[c_cell]*phi0[c_cell]/dt		
 			bMat[c_cell]+=rho*cellvolume[c_cell]*phi0[c_cell]/dt
+			
 			fluxMat[c_cell,c_cell]+= -( numpy.sum(fluxMat[c_cell,:]) - fluxMat[c_cell,c_cell] ) + rho*cellvolume[c_cell]/dt
-
+		
+		#print(fluxMat)
 		return fluxMat, bMat
