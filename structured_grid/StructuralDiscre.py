@@ -80,7 +80,9 @@ def LinFlux(struct_mesh):
 	flow_u=0
 	flow_v=0
 	flow_w=0
-	G0=0.01
+	G0=-0
+	# print("############")
+	# print(G0)
 	irho=1
 
 	#these values to be defined at the CV grid points

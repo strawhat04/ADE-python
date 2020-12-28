@@ -2,7 +2,7 @@ import numpy as np
 from StructuralDiscre import LinFlux
 from Meshing import struct_mesh
 class Solver(struct_mesh):
-    runtime=2
+    runtime=1.5
     dt=0.1
     def  __init__(self,struct_mesh):
         self.dim=np.array([struct_mesh.nz,struct_mesh.ny,struct_mesh.nx])
@@ -18,7 +18,7 @@ class Solver(struct_mesh):
         print(self.phi.shape)
 
 
-#         self.phi[0,int(mesh.nz/2-mesh.nz/5):int(mesh.nz/2+mesh.nz/5),int(mesh.ny/2-mesh.ny/5):int(mesh.ny/2+mesh.ny/5),int(mesh.nx/2-mesh.nx/5):int(mesh.nx/2+mesh.nx/5)]=20
+        self.phi[0,int(mesh.nz/2-mesh.nz/5):int(mesh.nz/2+mesh.nz/5),int(mesh.ny/2-mesh.ny/5):int(mesh.ny/2+mesh.ny/5),int(mesh.nx/2-mesh.nx/5):int(mesh.nx/2+mesh.nx/5)]=20
         #BOUNDARY CONDITION
 
         #array storing face area of each control volume element in face normal to x axis
@@ -29,15 +29,15 @@ class Solver(struct_mesh):
         Sz=np.dot((mesh.cvygrid[1:]-mesh.cvygrid[:-1]).reshape(-1,1), (mesh.cvxgrid[1:]-mesh.cvxgrid[:-1]).reshape(1,-1))
 
         #print("Imput Boundary Conditions as: D/N x0 y0 z0 xn yn zn")
-        bc,x0,y0,z0,xn,yn,zn=['d',10,0,0,10,0,0]
+        bc,x0,y0,z0,xn,yn,zn=['d',0,0,0,0,0,0]
         #Computing flux coefficient for dirichlet condition
         if bc=='D' or bc=='d':
             if(x0>0):
-                self.phi[:,:,:,1]=x0
+                self.phi[0,:,:,1]=x0
             if(y0>0):
-                self.phi[:,:,1,:]=y0
+                self.phi[0,:,1,:]=y0
             if(z0>0):
-                self.phi[:,1,:,:]=z0
+                self.phi[0,1,:,:]=z0
             if(zn>0):
                 self.phi[:,mesh.nz,:,:]=zn
             if(yn>0):
@@ -99,7 +99,7 @@ class Solver(struct_mesh):
                     if itr>1000:
                         break
                 else:
-                    # print("done for time t:",t*self.dt," sec, Total taken itr:",itr)
+                    print("done for time t:",t*self.dt," sec, Total taken itr:",itr)
                     break
         return self.phi
 
@@ -109,7 +109,6 @@ class Solver(struct_mesh):
         R=np.zeros((mesh.nz,mesh.ny,mesh.nx+2),)
         Q=np.zeros((mesh.nz,mesh.ny,mesh.nx+2),)
         print("vectorized  TDMA solver")
-        print(self.phi.shape)
         for t in range(1,self.phi.shape[0]):
             # print("calculating for t=",t*dt," sec")
             itr=1
@@ -119,7 +118,6 @@ class Solver(struct_mesh):
             while True:
                 R[:,:,0]=0
                 Q[:,:,0]=self.phi[t,1:-1,1:-1,1]
-                
                 for i in range(1, self.dim[2]-1):
                     #                               self.b[k,j,i]+self.ap0[k,j,i]*self.phi[t-1,k+1,j+1,i+1]
                     d[:,1:-1,i]=self.b[:,1:-1,i]+np.multiply(self.ap0[:,1:-1,i],self.phi[t-1,1:self.dim[0]+1,2:self.dim[1],i+1])
@@ -151,7 +149,7 @@ class Solver(struct_mesh):
                     if itr>1024:
                         break
                 else:
-                    # print("done for time t=%.2f"%(t*self.dt)," sec, Total taken itr:",itr)
+                    print("done for time t=%.2f"%(t*self.dt)," sec, Total taken itr:",itr)
                     break
         return self.phi
 
