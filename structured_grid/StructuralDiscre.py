@@ -1,9 +1,14 @@
 #This module discretize the ADE equation and return the flux matrix
-from Meshing import struct_mesh
+
+#import module
+
+#from Meshing import struct_mesh
+from parameters import *
+
+#import numpy modules
 import numpy as np
 import matplotlib.pyplot as plt
 
-# np.set_printoptions(threshold=np.inf)
 
 #advection flux coeff
 def F(rho, u, faceArea):
@@ -32,6 +37,7 @@ def dxg(i):
 		return 0
 	else:
 		return mesh.xgrid[i]-mesh.xgrid[i-1]
+
 #control volume element length  in y direction
 def dy(j):
 	return mesh.cvygrid[j+1]-mesh.cvygrid[j]
@@ -54,11 +60,15 @@ def dzg(k):
 		return mesh.zgrid[k]-mesh.zgrid[k-1]
 
 
+#this function will discretize the ADE equation by given input parameters
+#and return the coefficient flux of system of linear equation 
 def LinFlux(struct_mesh):
 
+	#define mesh grid object globally so all other function easily access without passion again as arguments
 	global mesh
 	mesh=struct_mesh
 
+	#globally define totaly number of grid points in each direction
 	global xGRID_nos, yGRID_nos, zGRID_nos
 
 	#total number of mesh grid points
@@ -72,25 +82,15 @@ def LinFlux(struct_mesh):
 	CV_zGRID_nos=len(mesh.cvzgrid)
 
 	#*************************************************************************
-	#the variables accessed from this star box will be imported from module later
-	dt=0.1
-	sp=0
-	sc=0
+	
+	#these values to be imported from the parameter module
+	u,v,w=velocity_model(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos)
+	
+	gamma=diffusion_model(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos)
+	
+	rho=density_model(CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos)
 
-	flow_u=0
-	flow_v=0
-	flow_w=0
-	G0=-0
-	# print("############")
-	# print(G0)
-	irho=1
-
-	#these values to be defined at the CV grid points
-	u=flow_u*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
-	v=flow_v*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
-	w=flow_w*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
-	gamma=G0*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
-	rho=irho*np.ones((CV_zGRID_nos,CV_yGRID_nos,CV_xGRID_nos))
+	sp,sc = source_model(zGRID_nos,yGRID_nos,xGRID_nos)
 
 
 	#*******************************************************************************
@@ -103,9 +103,11 @@ def LinFlux(struct_mesh):
 
 
 	#loop throught every mesh elements to compute the value of flux coefficeints
+	#Refer Readme to know more 
 	for i in range(0,xGRID_nos):
 		for j in range(0,yGRID_nos):
 			for k in range(0,zGRID_nos):
+				#aw=
 				aw[k,j,i]=D(gamma[k,j,i], dxg(i),dy(j)*dz(k))*funA(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),D(gamma[k,j,i], dxg(i), dy(j)*dz(k))) + max(F(rho[k,j,i],u[k,j,i], dy(j)*dz(k)),0)
 
 				ae[k,j,i]=D(gamma[k,j,i+1], dxg(i+1),dy(j)*dz(k))*funA(F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),D(gamma[k,j,i+1], dxg(i+1), dy(j)*dz(k) )) + max(-F(rho[k,j,i+1],u[k,j,i+1],dy(j)*dz(k)),0)
@@ -116,24 +118,13 @@ def LinFlux(struct_mesh):
 
 				ab[k,j,i]=D(gamma[k,j,i], dzg(k),dx(i)*dy(j))*funA(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),D(gamma[k,j,i], dzg(k), dx(i)*dy(j))) + max(F(rho[k,j,i],w[k,j,i], dx(i)*dy(j)),0)
 
-				af[k,j,i]=D(gamma[k+1,j,i], dzg(k+1),dx(i)*dy(j))*funA(F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),D(gamma[k+1,j,i], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[k+1,j,i],w[k,j,i+1],dx(i)*dy(j)),0)
+				af[k,j,i]=D(gamma[k+1,j,i], dzg(k+1),dx(i)*dy(j))*funA(F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),D(gamma[k+1,j,i], dzg(k+1), dx(i)*dy(j))) + max(-F(rho[k+1,j,i],w[k+1,j,i],dx(i)*dy(j)),0)
 
-				c[k,j,i]= sp*dx(i)*dy(j)*dz(k)
+				c[k,j,i]= sp[k,j,i]*dx(i)*dy(j)*dz(k)
 				ap0[k,j,i]=rho[k,j,i]*dx(i)*dy(j)*dz(k)/dt
-				b[k,j,i]=sc*dx(i)*dy(j)*dz(k) # +ap0[i]*phi[t-1,i]
+				b[k,j,i]=sc[k,j,i]*dx(i)*dy(j)*dz(k) # +ap0[i]*phi[t-1,i]
 
 	ap=aw+ae+ad+au+ab+af+ap0-c
-	return ap,aw,ae,ad,au,ab,af,ap0,b
 
-# class conditions():
-# 	def  __init__(self,struct_mesh):
-#         ap,aw,ae,ad,au,ab,af,ap0,b=LinFlux(struct_mesh)
-#         self.ap=ap
-#         self.aw=aw
-#         self.ae=ae
-#         self.ad=ad
-#         self.au=au
-#         self.ab=ab
-#         self.af=af
-#         self.ap0=ap0
-#         self.b=b
+	return ap,aw,ae,ad,au,ab,af,ap0,b
+	

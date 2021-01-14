@@ -1,11 +1,10 @@
 __pycache__
+buffer
 2D_ADE_SOLVER.py
 test.py
-<<<<<<< HEAD
 Ade3D.ipynb
 .ipynb_checkpoints/
 structured_grid/Ade3D.ipynb
 structured_grid/.ipynb_checkpoints/
-=======
-BoundaryCondi.py
->>>>>>> e302bc7fef03874ff3c404e483c83781c508cd14
+
+

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <ImageData WholeExtent="0 10 0 10 0 10" Origin="0 0 0" Spacing="1 1 1" Direction="1 0 0 0 1 0 0 0 1">
+    <Piece Extent="0 10 0 10 0 10"                                                    >
+      <PointData Scalars="ImageScalars">
+        <DataArray type="Float64" Name="ImageScalars" format="appended" RangeMin="-1"                   RangeMax="7"                    offset="0"                   />
+      </PointData>
+      <CellData>
+      </CellData>
+    </Piece>
+  </ImageData>
+  <AppendedData encoding="base64">
+   _AQAAAACAAACYKQAAVgAAAA==eJzt1KENACAMRcEOwjBszkqMQCBBgAbR5Gpeak7+iHm9rUSpcfyvyuVy/7vbU9W8zbY7XC6Xy+VyuVwul8vlcrlcLpfL5XK5XC6Xy+Vyudy7Az16j2I=
+  </AppendedData>
+</VTKFile>

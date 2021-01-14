@@ -5,6 +5,7 @@ from MeshProcessing import MeshTopoogy
 from EqDiscretization import linMatrix
 from scipy import linalg
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 #this function is to give unique ID to every face of triangular elemental mesh
 def meshcellFaceID(mesh):
@@ -33,7 +34,7 @@ with pygmsh.geo.Geometry() as geom:
             [1.0, 1],
             [1, .0],
         ],
-        mesh_size=0.4,
+        mesh_size=0.1
     )
     pymesh= geom.generate_mesh()
 
@@ -43,43 +44,68 @@ print(pymesh.points)
 
 pymesh.cellFaceID=meshcellFaceID(pymesh)
 
-
-print(pymesh.cells)
+print(dir(pymesh))
+# print(pymesh.cells)
 # print("\n--------sorting cell:1-------------\n")
 
 mtopo = MeshTopoogy(pymesh)
 mtopo.get_neighbourCELL()
 
-print("neighbour element",mtopo.neighCellID)
-print("centroid",mtopo.centroid)
+# print("neighbour element",mtopo.neighCellID)
+# print("centroid",mtopo.centroid)
 
 
 # print("boundary face", mtopo.BoundaryFace)
 lin=linMatrix()
 
-runtime=0.2
-dt=0.1
+runtime=1.2
+dt=0.05
 
-phi=-np.ones((int(runtime/dt)+1,len(mtopo.centroid)))
+phi=0*np.ones((int(runtime/dt)+1,len(mtopo.centroid)))
 
-# fluxMat, bMat=lin.get_linMatrix(pymesh,mtopo,dt, np.zeros((len(mtopo.centroid))))
+#phi[0,6]=phi[0,25]=phi[0,21]=phi[0,1]=2
+
+fluxMat, bMat=lin.get_linMatrix(pymesh,mtopo,dt, np.zeros((len(mtopo.centroid))))
 # print("flux mat", fluxMat)
 # print("bMat", bMat)
 
-# for t in range(len(phi[:,0])-1):
-# 	fluxMat, bMat=lin.get_linMatrix(pymesh,mtopo,dt, phi[t,:])
-# 	phi[t+1,:]=np.transpose(np.linalg.solve(fluxMat,bMat))
+for t in range(len(phi[:,0])-1):
+	fluxMat, bMat=lin.get_linMatrix(pymesh,mtopo,dt, phi[t,:])
+	phi[t+1,:]=np.transpose(np.linalg.solve(fluxMat,bMat))
+# 	print("bmat", bMat)
 
 	
-# print(phi)
+# print(phi[-1,:])
 # print(np.max(phi))
 
-# print(mtopo.centroid.shape, ans.shape)
-# fig,ax=plt.subplots(figsize=(10,5))
-# cs=ax.pcolormesh(mtopo.centroid, ans)
-# plt.show()
+# print(phi.shape)
+pmax=np.max(phi)
+pmin=np.min(phi)
 
-#print(fluxMat.shape(),ans.shape
+
+pymesh.field_data=phi[-1,:]
+print(pymesh.field_data)
+pymesh.write("out.vtk")
+fig = plt.figure() 
+axis = plt.axes(xlim=(0, 1), ylim=(0,1)) 
+
+plot1=axis.tricontour(mtopo.centroid[:,0],mtopo.centroid[:,1], phi[1,:], levels=16, linewidths=0.05, colors='k')
+cntr = axis.tricontourf(mtopo.centroid[:,0],mtopo.centroid[:,1], phi[1,:], levels=16, cmap ='OrRd', vmin=pmin,vmax=pmax)
+fig.colorbar(cntr, ax=axis)
+axis.plot(mtopo.centroid[:,0],mtopo.centroid[:,1], 'ko', ms=3)
+
+
+print("Animating")
+def animate(t):
+    axis.clear()
+    plot1=axis.tricontour(mtopo.centroid[:,0],mtopo.centroid[:,1], phi[t,:], levels=16, linewidths=0.05, colors='k')
+    cntr = axis.tricontourf(mtopo.centroid[:,0],mtopo.centroid[:,1], phi[t,:], levels=16,cmap ='OrRd')
+#     fig.colorbar(cntr, ax=axis)
+    axis.set_title("Pure advection, Source at x=0amd vx=1, vy=0\nat t:(%f) seconds"%(dt*t))
+vis=FuncAnimation(fig,animate,frames=range(0,len(phi)), interval=200,repeat=False)
+vis.save('mtp1.gif', writer='imagemagick')
 mesh3=meshplex.MeshTri(pymesh.points, pymesh.cells[1].data)
-mesh3.show()
+#mesh3.show()
+plt.show()
+
 
