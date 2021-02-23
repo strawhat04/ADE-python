@@ -166,7 +166,8 @@ class solverCLS(struct_mesh):
                     #print("done for time t:",t*self.dt," sec, Total taken itr:",itr)
                     break
             print("for t=", t, "At itr=",itr," Error:",err)
-        return self.phi
+        print(self.phi.shape)
+        return self.phi[:,1:-1,1:-1,1:-1]
 
     def ADIsolver(self,mesh):
         self.ap+=2*self.ap0
