@@ -2,34 +2,24 @@
 import numpy as np
 from StructuralDiscre import LinFlux
 from Meshing import struct_mesh
-from parameters import runtime, dt
+from parameters import runtime, dt, iphi
 from BoundaryCondition import Bcond
 
 #Class to solver
 class solverCLS(struct_mesh):
     runtime=runtime
     dt=dt
+    iphi=iphi
     def  __init__(self,struct_mesh):
         self.dim=np.array([struct_mesh.nz,struct_mesh.ny,struct_mesh.nx])
         self.ap,self.aw,self.ae,self.ad,self.au,self.ab,self.af,self.ap0,self.b=LinFlux(struct_mesh)
         self.bc = None
-        # self.ap=ap
-        # self.aw=aw
-        # self.ae=ae
-        # self.ad=ad
-        # self.au=au
-        # self.ab=ab
-        # self.af=af
-        # self.ap0=ap0
-        # self.b=b
-
-
 
     # def fun(self,x,y,z):
     #     return x*self.ap.shape[1]*self.ap.shape[2]+y*self.ap.shape[2]+z
 
     def set_conditions(self,mesh):
-        iphi=-1
+        
         self.phi=iphi*np.ones((int(self.runtime/self.dt)+1,mesh.nz+2,mesh.ny+2,mesh.nx+2)) #include 2 ghost nodes
 
         #Put initital condition here
@@ -38,14 +28,11 @@ class solverCLS(struct_mesh):
         #BOUNDARY CONDITION
 
         #array storing face area of each control volume element in face normal to x axis
-        self.Sx=np.dot((mesh.cvygrid[1:]-mesh.cvygrid[:-1]).reshape(-1,1), (mesh.cvzgrid[1:]-mesh.cvzgrid[:-1]).reshape(1,-1))
+        self.Sx=np.dot((mesh.cvzgrid[1:]-mesh.cvzgrid[:-1]).reshape(-1,1), (mesh.cvygrid[1:]-mesh.cvygrid[:-1]).reshape(1,-1))
         #array storing face area of each control volume element in face normal to y axis
-        self.Sy=np.dot((mesh.cvxgrid[1:]-mesh.cvxgrid[:-1]).reshape(-1,1), (mesh.cvzgrid[1:]-mesh.cvzgrid[:-1]).reshape(1,-1))
+        self.Sy=np.dot((mesh.cvzgrid[1:]-mesh.cvzgrid[:-1]).reshape(-1,1), (mesh.cvxgrid[1:]-mesh.cvxgrid[:-1]).reshape(1,-1) )
         #array storing face area of each control volume element in face normal to z axis
         self.Sz=np.dot((mesh.cvygrid[1:]-mesh.cvygrid[:-1]).reshape(-1,1), (mesh.cvxgrid[1:]-mesh.cvxgrid[:-1]).reshape(1,-1))
-
-        #intiate boundary condition for t=0
-        self.phi, self.b=Bcond(self.phi, self.b, self.Sx, self.Sy, self.Sz,0, mesh.nx, mesh.ny, mesh.nz)
 
     ''' this function solve linear equation array by array using line by line method
     which is a combination of Gauss-Seidel and TDMA, we are implementing TDMA in x direction and Gauss-seidel in rest
@@ -86,7 +73,7 @@ class solverCLS(struct_mesh):
                             Q[i+1]=(d[k,j,i]+self.aw[k,j,i]*Q[i])/(self.ap[k,j,i]-self.aw[k,j,i]*R[i])
                         for i in range(self.dim[2]-1,0,-1):
                             self.phi[t,k+1,j+1,i+1]=R[i+1]*self.phi[t,k+1,j+1,i+2]+Q[i+1]
-					#print("afd", Q[i+1], R[i+1])
+                    #print("afd", Q[i+1], R[i+1])
                 
                 rdue=self.phi[t,2:-2,2:-2,2:-2]-np.divide((np.multiply(self.aw[1:-1,1:-1,1:-1],self.phi[t,2:-2,2:-2,1:-3])+np.multiply(self.ae[1:-1,1:-1,1:-1],self.phi[t,2:-2,2:-2,3:-1])+np.multiply(self.au[1:-1,1:-1,1:-1],self.phi[t,2:-2,3:-1,2:-2])+np.multiply(self.ad[1:-1,1:-1,1:-1], self.phi[t,2:-2,1:-3,2:-2])+np.multiply(self.af[1:-1,1:-1,1:-1],self.phi[t,3:-1,2:-2,2:-2])+np.multiply(self.ab[1:-1,1:-1,1:-1], self.phi[t,1:-3,2:-2,2:-2])+self.b[1:-1,1:-1,1:-1]+ np.multiply(self.ap0[1:-1,1:-1,1:-1],self.phi[t-1,2:-2,2:-2,2:-2])),self.ap[1:-1,1:-1,1:-1])
                 
@@ -117,24 +104,22 @@ class solverCLS(struct_mesh):
         Q=np.zeros((mesh.nz,mesh.ny,mesh.nx+2),)
         # print("vectorized  TDMA solver")
         # print(self.phi.shape)
-
-        #these Bc need to implement for TDMA specifically
-        Q[:,:,0]=R[:,:,0]=0
         
         #This Boundary condtion need to be implemented due to nature of TDMA Solver
-        Q[:,:,1]=self.phi[0,0,0,1]
-        Q[:,:,mesh.nx]=self.phi[0,0,0,mesh.nx]
+        
 
         for t in range(1,self.phi.shape[0]):
             # print("calculating for t=",t*dt," sec")
             itr=1
             rdue.fill(1)
             error_init=0
-            self.phi[t,:,:,:]=self.phi[t-1,:,:,:]
+            self.phi[t,:,:,:]=self.phi[t-1,:,:,:]            
+            
             while True:
-
-                for i in range(1, self.dim[2]):
+                
+                for i in range(0, self.dim[2]):
                     #                               self.b[k,j,i]+self.ap0[k,j,i]*self.phi[t-1,k+1,j+1,i+1]
+                    
                     d[:,:,i]=self.b[:,:,i]+np.multiply(self.ap0[:,:,i],self.phi[t-1,1:self.dim[0]+1,1:self.dim[1]+1,i+1])
                     #                               self.au[k,j,i]*self.phi[t,k+1,j+1+1,i+1]
                     d[:,:,i]+=np.multiply(self.au[:,:,i],self.phi[t,1:self.dim[0]+1,2:self.dim[1]+2,i+1])
@@ -146,38 +131,34 @@ class solverCLS(struct_mesh):
 
                                              # self.ab[k,j,i]*self.phi[t,k+1-1,j+1,i+1]
                     d[:,:,i]+=np.multiply(self.ab[:,:,i],self.phi[t,:self.dim[0],1:self.dim[1]+1,i+1])
+
                     R[:,:,i+1]=self.ae[:,:,i]/(self.ap[:,:,i]-self.aw[:,:,i]*R[:,:,i])
                     Q[:,:,i+1]=(d[:,:,i]+self.aw[:,:,i]*Q[:,:,i])/(self.ap[:,:,i]-self.aw[:,:,i]*R[:,:,i])
-
-                #Forced TDMA Boundary Condition
-                Q[:,:,1]=self.phi[t,0,0,1]
-                R[:,:,1]=0
-                Q[:,:,mesh.nx]=self.phi[t,0,0,mesh.nx]
-                R[:,:,mesh.nx]=0
-
-                for i in range(self.dim[2]-1,0,-1):
+                    
+                    if i==0 or i==self.dim[2]-1:
+                        self.phi, self.b, Q, R=Bcond(self.phi, self.Sx, self.Sy, self.Sz,t, mesh.nx, mesh.ny, mesh.nz, self.ap,self.aw,self.ae,self.ad,self.au,self.ab,self.af,self.ap0,self.b,Q,R)                
+                
+                for i in range(self.dim[2]-1,-1,-1):
                     # self.phi[t,k+1,j+1,i+1]=R[i+1]*self.phi[t,k+1,j+1,i+2]+Q[i+1]
                     self.phi[t,1:self.dim[0]+1,1:self.dim[1]+1,i+1]=np.multiply(R[:,:,i+1],self.phi[t,1:self.dim[0]+1,1:self.dim[1]+1,i+2]) +Q[:,:,i+1]
-                
-                #initiate boundary condition for each iteration as Boundary elements also included in computation
-                self.phi, self.b=Bcond(self.phi, self.b, self.Sx, self.Sy, self.Sz,t, mesh.nx, mesh.ny, mesh.nz)
+
+                # #initiate boundary condition for each iteration as Boundary elements also included in computation
+                self.phi, self.b, Q, R=Bcond(self.phi, self.Sx, self.Sy, self.Sz,t, mesh.nx, mesh.ny, mesh.nz, self.ap,self.aw,self.ae,self.ad,self.au,self.ab,self.af,self.ap0,self.b,Q,R)
 
                 rdue=self.phi[t,2:-2,2:-2,2:-2]-np.divide((np.multiply(self.aw[1:-1,1:-1,1:-1],self.phi[t,2:-2,2:-2,1:-3])+np.multiply(self.ae[1:-1,1:-1,1:-1],self.phi[t,2:-2,2:-2,3:-1])+np.multiply(self.au[1:-1,1:-1,1:-1],self.phi[t,2:-2,3:-1,2:-2])+np.multiply(self.ad[1:-1,1:-1,1:-1], self.phi[t,2:-2,1:-3,2:-2])+np.multiply(self.af[1:-1,1:-1,1:-1],self.phi[t,3:-1,2:-2,2:-2])+np.multiply(self.ab[1:-1,1:-1,1:-1], self.phi[t,1:-3,2:-2,2:-2])+self.b[1:-1,1:-1,1:-1]+ np.multiply(self.ap0[1:-1,1:-1,1:-1],self.phi[t-1,2:-2,2:-2,2:-2])),self.ap[1:-1,1:-1,1:-1])
 
                 err=np.linalg.norm(rdue)
-                if err>1e-4:
+                if err>1e-5:
                     # print("At itr=",itr," Error:",err)
                     itr+=1
-                    if(np.absolute(err-error_init)<1e-6):
-                        break
-                    error_init=err
+                    
                     if itr>1000:
                         break
                 else:
                     #print("done for time t:",t*self.dt," sec, Total taken itr:",itr)
                     break
             print("for t=", t, "At itr=",itr," Error:",err)
-        return self.phi
+        return self.phi[:,1:-1,1:-1,1:-1]
 
     def ADIsolver(self,mesh):
         self.ap+=2*self.ap0
