@@ -3,82 +3,118 @@
 from Solver import solverCLS
 from Meshing import struct_mesh
 from parameters import runtime, dt
-import dill
 #Import python default module
 import numpy as np
+from vtk.util.numpy_support import numpy_to_vtk
+import vtk
 import time
-import matplotlib.pyplot as plt
-from matplotlib.collections import cm
-import matplotlib.animation as animation
+from os import getcwd ,rename
+from os.path import join
+import os
+import shutil
+    
+if __name__=='__main__':
+       
+    dimensions=[5,3,2]
+    mesh_grid=[21,26,31]
+    mesh_elem=[mesh_grid[0]-1, mesh_grid[1]-1, mesh_grid[2]-1]
+    meshg=struct_mesh(dimensions,mesh_grid)
+    meshg.generate_mesh()
+    solver=solverCLS(meshg)
+    solver.set_conditions(meshg)
+    tp=time.perf_counter()
+    phi=solver.solveByVector(meshg)
+    print("xgrid", meshg.cvxgrid)
+    print("ygrid", meshg.cvygrid)
+    print("zgrid", meshg.cvzgrid)
+    print("fast tdma taken time:",time.perf_counter()-tp)
+    print(phi.shape)
+    phi = np.swapaxes(phi,1,3)
+    
+    pwd=getcwd()
+    print(pwd)
+    out_path =pwd+"/out_Paraview"
+
+    
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+
+    os.chdir(out_path)
+    print(getcwd())
+
+    # with open("sim_index", "r+") as file:
+    #   sim=file.read()
+    #   if sim==None:
+    #       file.write(0)
+    #   else:
+       #        file.write(sim+1)
 
 
-dimensions=[2,2,2]
-mesh_grid=[50,50,50]
-# arr=np.arange(64).reshape((4,4,4))
-# print(arr[0,0,:])
-xGRID_nos=mesh_grid[0]
-#print("for shape",mesh_grid)
+    if os.path.isfile(out_path+"/sim_index"):
+        with open("sim_index", "r+") as file:
+            sim=file.read()
+            sim=str(int(float(sim)))
+            file.seek(0)
+            file.truncate()
+            file.write(sim)
 
-meshg=struct_mesh(dimensions,mesh_grid)
-meshg.generate_mesh()
+    else:
+        sim='0'
+        with open("sim_index", "w") as file:
+            file.write(sim)
+        
 
-#dill.dump(meshg, file = open("mesh16-20-15.pickle", "wb"))
+    out_case=out_path+"/sim" + sim
+    
+    if not os.path.exists(out_case):
+        os.makedirs(out_case)
 
-solver=solverCLS(meshg)
-solver.set_conditions(meshg)
-tp=time.perf_counter()
-# phi=solver.solve(meshg)
-# print("slow tdma taken time:",time.perf_counter()-tp)
-# tp=time.perf_counter()
-phi=solver.solveByVector(meshg)
-# print("old TDMA: ", time.perf_counter()-tp)
-# tp=time.perf_counter()
-# phi=solver.ADIsolver(meshg)
-print("new TDMA: ", time.perf_counter()-tp)
+    os.chdir(out_case)
+    print(getcwd())
+    #shutil.rmtree(out_path)
+    #saving the data 
+    # filen='test_grid.npz'
+    np.savez('ScalarMatrixValue',phi)
 
-np.save('phipure',phi)
+    # src=join(getcwd(),filen)
+    # dest=join(getcwd()+"/out_Paraview/",filen)
+    # print(src,getcwd()+"/out_Paraview/")
+    # shutil.move(filen,getcwd()+"/out_Paraview/"+filen)
+    # # os.replace(src,dest)
+    
+    # data_st=np.load('gr20_Vel_MID_Sc.npz')
+    # phi=  data_st['arr_0']
+    # del data_st
+    
+    
 
-#print("fast tdma taken time:",time.perf_counter()-tp)
-#print(np.linalg.norm(p1-phi))
+    """ VTK IMAGES"""
+    colors = vtk.vtkNamedColors()
+    img= vtk.vtkImageData()
+    img.SetDimensions(phi.shape[1], phi.shape[2], phi.shape[3])
+    img.SetSpacing(np.divide(dimensions,mesh_elem))
+    # img.SetSpacing([1,1,1])00000
+    img.AllocateScalars(vtk.VTK_DOUBLE, 1)
+    img.SetOrigin(0.0, 0.0, 0.0)
+    print(img.GetNumberOfPoints(),img.GetNumberOfCells())
+    # print(img.GetCellData())
+    # print(img.GetData())
+    dims = img.GetDimensions()
+    print(dims)
+    print(phi.shape)
+    
 
-
-z,y=np.meshgrid(meshg.cvzgrid,meshg.cvygrid)
-fig,ax=plt.subplots(figsize=(10,5))
-print("hererere" , z.shape, y.shape, phi[0,1:-1,1:-1,int(xGRID_nos/2)].shape)
-#PLOT COLOR MESH
-cmin=np.min(phi[:,1:-1,1:-1,int(xGRID_nos/2)])
-#print(cmin)     
-cmax=np.max(phi[:,1:-1,1:-1,int(xGRID_nos/2)])
-#print(cmax)
-cs=ax.pcolormesh(z,y,np.transpose(phi[0,1:-1,1:-1,int(xGRID_nos/2)]), cmap=cm.RdPu, vmin=cmin,vmax=cmax)
-
-cbar=fig.colorbar(cs)
-plt.xticks(fontsize=16)
-plt.yticks(fontsize=16)
-ax.set_xlabel("Y axis\nDistance(m)\n",fontsize=16)
-ax.set_ylabel("Z axis\nDistance(m)\n",fontsize=16)
-ax.set_title("YZ plane view at centroid of domain for Pure Advection\n with gamma=0, uy=1, ux=uz=0",fontsize=16)
-ax.text(0,-1/7,'at time= 0 sec\n',fontsize=16)
-
-#plt.show()
-#Func TO ANIMATE THE PLOT
-def update(t):
-    for txt in ax.texts:
-        txt.set_visible(False)
-    ax.pcolormesh(z,y,np.transpose(phi[t,1:-1,1:-1,int(xGRID_nos/2)]), cmap=cm.RdPu, vmin=cmin,vmax=cmax)
-    ax.text(0,-1/6,'at time= %f sec\n'%(t*dt), size=10,fontsize=16)
-
-sim= animation.FuncAnimation(fig,update, frames=range(0,len(phi[:,0,0,0])), interval=500, repeat=False)
-#sim.save('uycouse.gif', writer='imagemagick')
-
-plt.show()
-
-
-# print(phi[2:,3,:-2,:-2])
-# phi=solver.solve1()
-# phi2=solver.solve2()
-
-# print(" #####dif#####")
-# print(phi2[1,1,1:-1,1:-1])
-
-# print("Time Taken:",time.perf_counter()-tp)
+    for i in range((phi.shape[0])):
+        for z in range(dims[2]):
+            for y in range(dims[1]):
+                for x in range(dims[0]):
+                    img.SetScalarComponentFromDouble(x, y, z, 0,phi[i,x,y,z])
+        writer = vtk.vtkXMLImageDataWriter()
+        filen= "Test_{}.vti".format(i*dt)
+        writer.SetFileName(filen)
+        writer.SetInputData(img)
+        writer.Write()
+    
+    print("done")
+    os.chdir(pwd)
+        
